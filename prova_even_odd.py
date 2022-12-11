@@ -63,10 +63,10 @@ first_batch_test = enumerate(test_loader)
 batch_idx_test, (X_test, y_test) = next(first_batch_test)
 print(X_test.shape)
 
-L_th = 1e-8
+L_th = 1e-6
 dL_th = 1e-8
-maxsteps = 10000
-ps = [756, 784, 812, 830]
+maxsteps = 50000
+ps = np.array([500, 700, 784, 800, 864, 900])
 L_trains = []
 L_tests = []
 
