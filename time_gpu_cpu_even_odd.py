@@ -6,13 +6,23 @@ import torchvision
 import matplotlib.pyplot as plt
 import torch.nn as nn
 
+import timeit
+mysetup1 = '''
+import torch
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(torch.cuda.get_device_name(device))
 #check if it's the right gpu
-print(device)
+print(device)'''
+mysetup2='''
+import torch
+device=torch.device("cpu")
+print(device)'''
+mycode = '''
 
-
-
+import numpy as np
+import torchvision
+import matplotlib.pyplot as plt
+import torch.nn as nn
 class one_hidden(nn.Module):
     def __init__(self,d, H):
         super().__init__()
@@ -143,7 +153,13 @@ plt.ylabel('L test')
 plt.yscale('log')
 plt.xscale('log')
 plt.show()
-
+'''
+print (timeit.timeit(setup = mysetup1,
+                     stmt = mycode,
+                     number = 1))
+print (timeit.timeit(setup = mysetup2,
+                     stmt = mycode,
+                     number = 1))
         
 
 
