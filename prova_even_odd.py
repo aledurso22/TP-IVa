@@ -30,8 +30,8 @@ class one_hidden(nn.Module):
         x = self.layers(x / self.d**0.5)
         return x.reshape((len(x),)) / self.H
 
-batch_size_train = 64
-batch_size_test = 1000
+batch_size_train = 1024
+batch_size_test = 1024
 
 
 
@@ -71,9 +71,9 @@ X_test = X_test.to(device)
 y_test = y_test.to(device)
 
 L_th = 1e-6
-dL_th = 1e-8
-maxsteps = 10000
-ps = np.array([500, 700, 784, 800, 864])
+dL_th = 1e-5
+maxsteps = 10000000
+ps = np.array([900, 950, 1024,1048,1072,1156])
 L_trains = []
 L_tests = []
 
@@ -98,11 +98,12 @@ for p in ps:
     y_train_label = y_train%2 #1 if odd and 0 if even
 
 
+
     y_pred_train = student(X_train)
     L_train =(1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()  
     optimizer.zero_grad()
     L_train.backward()
-    optimizer.step()
+    optimizer.step() 
     y_pred_train = student(X_train)
     L_train_new = (1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()
 
@@ -142,6 +143,7 @@ plt.ylabel('L test')
 plt.yscale('log')
 plt.xscale('log')
 plt.show()
+
 
         
 
