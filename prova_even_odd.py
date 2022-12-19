@@ -32,7 +32,7 @@ class one_hidden(nn.Module):
 
 batch_size_train = 64
 batch_size_test = 1024
-tr_split_len = 1024
+tr_split_len = 4000
 te_split_len = 1024
 
 
@@ -55,10 +55,10 @@ te =   torchvision.datasets.MNIST('/files/', train=False, download=True,
 #here I lower the size
 part_tr = torch.utils.data.random_split(tr, [tr_split_len, len(tr)-tr_split_len])[0]
 part_te = torch.utils.data.random_split(te, [te_split_len, len(te)-te_split_len])[0]                            
-
+print(part_te)
 train_loader = torch.utils.data.DataLoader(part_tr,  batch_size = batch_size_train, shuffle=True)
 test_loader = torch.utils.data.DataLoader(part_te,  batch_size=batch_size_test, shuffle=True)
-
+print(train_loader)
 
 #I do this just to take the size d
 first_batch_train = enumerate(train_loader)
@@ -74,10 +74,10 @@ print(X_test.shape)
 X_test = X_test.to(device)
 y_test = y_test.to(device)
 
-L_th = 1e-6
-dL_th = 1e-5
+L_th = 1e-1
+dL_th = 2e-4
 maxsteps = 10000000
-ps = np.array([900, 950, 1024, 1048, 1072, 1156])
+ps = np.array([1, 3 ,5, 7, 9])
 L_trains = []
 L_tests = []
 
@@ -92,6 +92,7 @@ for p in ps:
   delta_L = 1
   L_train = 1
   i = 0
+  
 
 
   #ho 60000 immagini in totale
