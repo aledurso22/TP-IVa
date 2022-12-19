@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import torch.nn as nn
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(torch.cuda.get_device_name(device))
 #check if it's the right gpu
+print(torch.cuda.get_device_name(device))
 print(device)
 
 
@@ -30,9 +30,10 @@ class one_hidden(nn.Module):
         x = self.layers(x / self.d**0.5)
         return x.reshape((len(x),)) / self.H
 
-batch_size_train = 1024
+batch_size_train = 64
 batch_size_test = 1024
-
+tr_split_len = 1024
+te_split_len = 1024
 
 
 random_seed = 1
@@ -40,28 +41,31 @@ random_seed = 1
 torch.manual_seed(random_seed)
 
 
-train_loader = torch.utils.data.DataLoader(
-  torchvision.datasets.MNIST('/files/', train=True, download=True,
+tr =   torchvision.datasets.MNIST('/files/', train=True, download=True,
                              transform=torchvision.transforms.Compose([
                                torchvision.transforms.ToTensor()
-                             ])),
-  batch_size=batch_size_train, shuffle=True)
+                             ]))
 
-test_loader = torch.utils.data.DataLoader(
-  torchvision.datasets.MNIST('/files/', train=False, download=True,
+te =   torchvision.datasets.MNIST('/files/', train=False, download=True,
                              transform=torchvision.transforms.Compose([
                                torchvision.transforms.ToTensor()
-                             ])),
-  batch_size=batch_size_test, shuffle=True)
+                             ])) 
 
+
+#here I lower the size
+part_tr = torch.utils.data.random_split(tr, [tr_split_len, len(tr)-tr_split_len])[0]
+part_te = torch.utils.data.random_split(te, [te_split_len, len(te)-te_split_len])[0]                            
+
+train_loader = torch.utils.data.DataLoader(part_tr,  batch_size = batch_size_train, shuffle=True)
+test_loader = torch.utils.data.DataLoader(part_te,  batch_size=batch_size_test, shuffle=True)
+
+
+#I do this just to take the size d
 first_batch_train = enumerate(train_loader)
-#here low the size
-
 batch_idx, (X_train, y_train) = next(first_batch_train)
 d = X_train.shape[-1]
 print(X_train.shape)
-X_train = X_train.to(device)
-y_train = y_train.to(device)
+
 
 
 first_batch_test = enumerate(test_loader)
@@ -73,7 +77,7 @@ y_test = y_test.to(device)
 L_th = 1e-6
 dL_th = 1e-5
 maxsteps = 10000000
-ps = np.array([900, 950, 1024,1048,1072,1156])
+ps = np.array([900, 950, 1024, 1048, 1072, 1156])
 L_trains = []
 L_tests = []
 
@@ -81,7 +85,7 @@ L_tests = []
 for p in ps:
   student = one_hidden(d*d, p)
   student.to(device)
-  optimizer = torch.optim.SGD(student.parameters(), lr=2)
+  optimizer = torch.optim.SGD(student.parameters(), lr=1)
   #my threasholds:
 
   #I inizialize some variables:
@@ -92,23 +96,26 @@ for p in ps:
 
   #ho 60000 immagini in totale
   while (L_train>L_th or delta_L > dL_th) and i<maxsteps:
-    #batch_idx, (X_train, y_train) in enumerate(train_loader): #per ogni cilo ho 64 (la dim del train_batch) immagini tranne l'ultimo
+    for batch_idx, (X_train, y_train) in enumerate(train_loader): #per ogni cilo ho 64 (la dim del train_batch) immagini tranne l'ultimo
     #praticamente sto facendo un for per ogni batch
+      X_train = X_train.to(device)
+      y_train = y_train.to(device)
+    
 
-    y_train_label = y_train%2 #1 if odd and 0 if even
+      y_train_label = y_train%2 #1 if odd and 0 if even
 
 
 
-    y_pred_train = student(X_train)
-    L_train =(1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()  
-    optimizer.zero_grad()
-    L_train.backward()
-    optimizer.step() 
-    y_pred_train = student(X_train)
-    L_train_new = (1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()
-
+      y_pred_train = student(X_train)
+      L_train =(1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()  
+      optimizer.zero_grad()
+      L_train.backward()
+      optimizer.step() 
+      y_pred_train = student(X_train)
+      L_train_new = (1/batch_size_train) * ( (y_train_label - y_pred_train ) ** 2).sum()
+    #out of the for
     delta_L = abs(L_train - L_train_new)
-    if i % 1000 == 0: print(f'step {i} - L_train={L_train.item()}')
+    if i % 100 == 0: print(f'step {i} - L_train={L_train.item()}')
     i += 1
 
 
@@ -128,7 +135,7 @@ for p in ps:
 
 
 
-plt.plot((ps/batch_size_train), np.array(L_trains),'-ok')
+plt.plot((ps/tr_split_len), np.array(L_trains),'-ok')
 
 plt.xlabel('p/n_train')
 plt.ylabel('L train')
@@ -136,7 +143,7 @@ plt.yscale('log')
 plt.xscale('log')
 plt.show()
 
-plt.plot((ps/batch_size_train), np.array(L_tests),'-ok')
+plt.plot((ps/tr_split_len), np.array(L_tests),'-ok')
 
 plt.xlabel('p/n_train')
 plt.ylabel('L test')
