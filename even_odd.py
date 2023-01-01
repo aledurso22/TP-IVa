@@ -11,6 +11,8 @@ print(torch.cuda.get_device_name(device))
 #check if it's the right gpu
 print(device)
 
+random_seed = 1
+torch.manual_seed(random_seed)
 
 
 class one_hidden(nn.Module):
@@ -35,12 +37,6 @@ batch_size_train = 4096
 batch_size_test = 12288
 
 
-
-random_seed = 1
-
-torch.manual_seed(random_seed)
-
-
 train_loader = torch.utils.data.DataLoader(
   torchvision.datasets.MNIST('/files/', train=True, download=True,
                              transform=torchvision.transforms.Compose([
@@ -56,7 +52,7 @@ test_loader = torch.utils.data.DataLoader(
   batch_size=batch_size_test, shuffle=True)
 
 first_batch_train = enumerate(train_loader)
-#here low the size
+
 
 batch_idx, (X_train, y_train) = next(first_batch_train)
 d = X_train.shape[-1]
@@ -71,9 +67,9 @@ print(X_test.shape)
 X_test = X_test.to(device)
 y_test = y_test.to(device)
 
-L_th = 0.085 #1e-3
-dL_th = 1e-3 #1e-4
-maxsteps = 700000 #10000
+L_th = 0.085
+dL_th = 1e-3
+maxsteps = 700000 
 ps = np.array([1, 2, 4, 5, 6, 8, 9])
 L_trains = []
 L_tests = []
@@ -85,7 +81,6 @@ for p in ps:
   student = one_hidden(d*d, p)
   student.to(device)
   optimizer = torch.optim.SGD(student.parameters(), lr=1)
-  #my threasholds:
 
   #I inizialize some variables:
   delta_L = 1
@@ -98,10 +93,9 @@ for p in ps:
 
 
 
-  #ho 60000 immagini in totale
+  
   while (L_train>L_th or delta_L > dL_th) and i<maxsteps:
-    #batch_idx, (X_train, y_train) in enumerate(train_loader): #per ogni cilo ho 64 (la dim del train_batch) immagini tranne l'ultimo
-    #praticamente sto facendo un for per ogni batch
+  
 
     y_train_label = y_train%2 #1 if odd and 0 if even
 
@@ -123,12 +117,11 @@ for p in ps:
   counter = 0
 
   with torch.no_grad():
-    #for X_test, y_test in enumerate(test_loader): #ora ho batch da 1000 immagini e quindi in totale avrò 60 cicli
     y_test_label = y_test%2 #1 if odd and 0 if even
     y_pred_test = student(X_test)
     L_test =(1/batch_size_test) * ( (y_test_label - y_pred_test ) ** 2).sum()
     print(f'L_test={L_test.item()}')
-  #if device == "cuda:0":
+ 
   L_train = L_train.to("cpu")
   L_test = L_test.to("cpu")
   L_trains.append(L_train.detach())
@@ -255,7 +248,7 @@ for n_ in n_s:
     optimizer = torch.optim.SGD(student.parameters(), lr=1)
     
 
-    #I inizialize some variables:
+  
     delta_L = 1
     L_train = 1
     i = 0
@@ -263,7 +256,7 @@ for n_ in n_s:
 
 
 
-    #ho 60000 immagini in totale
+    
     while (L_train>L_th or delta_L > dL_th) and i<maxsteps:
     
 
@@ -285,7 +278,6 @@ for n_ in n_s:
 
 
     with torch.no_grad():
-      #for X_test, y_test in enumerate(test_loader): #ora ho batch da 1000 immagini e quindi in totale avrò 60 cicli
       y_test_label = y_test%2 #1 if odd and 0 if even
       y_pred_test = student(X_test)
       L_test =(1/batch_size_test) * ( (y_test_label - y_pred_test ) ** 2).sum()
